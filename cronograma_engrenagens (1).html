@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cronograma — Elementos de Máquinas II</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper:#f5f0e8; --paper-dark:#ede6d6; --ink:#1a1410; --ink-light:#3d3020;
+    --sepia:#8b6914; --rust:#8b2500; --rust-light:#c44020;
+    --forest:#1a4a2e; --forest-mid:#2d7a4a;
+    --amber:#8b5a00; --amber-light:#c08020;
+    --slate:#2a3d5e; --slate-light:#4a6080;
+    --deadline:#6b1a1a; --done-bg:#d8e8d0; --done-border:#2d7a4a;
+    --grid-line:#c8bfa8; --shadow:rgba(26,20,16,0.15);
+    --blocked:#b0a898; --blocked-bg:#e8e2d8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:var(--paper);color:var(--ink);font-family:'Crimson Pro',Georgia,serif;font-size:15px;line-height:1.5;min-height:100vh;}
+  body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");background-size:200px 200px;}
+  .wrapper{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:24px 16px 60px;}
+  header{text-align:center;margin-bottom:28px;padding-bottom:20px;border-bottom:2px solid var(--sepia);}
+  header h1{font-family:'Playfair Display',serif;font-size:clamp(22px,5vw,38px);font-weight:900;letter-spacing:-0.5px;color:var(--ink);line-height:1.1;}
+  header p{font-style:italic;color:var(--ink-light);margin-top:6px;font-size:14px;}
+
+  /* PROGRESS */
+  .progress-section{background:var(--paper-dark);border:1px solid var(--grid-line);border-radius:4px;padding:14px 18px;margin-bottom:22px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;}
+  .progress-label{font-family:'Playfair Display',serif;font-weight:700;font-size:13px;color:var(--ink-light);white-space:nowrap;}
+  .progress-bar-wrap{flex:1;min-width:180px;height:12px;background:var(--grid-line);border-radius:6px;overflow:hidden;}
+  .progress-bar-fill{height:100%;background:var(--forest-mid);border-radius:6px;transition:width 0.4s ease;}
+  .progress-pct{font-weight:600;color:var(--forest);font-size:14px;white-space:nowrap;}
+
+  /* COUNTDOWNS */
+  .countdowns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:22px;}
+  .countdown-card{flex:1;min-width:180px;border-radius:4px;padding:12px 16px;border:1.5px solid;position:relative;overflow:hidden;}
+  .countdown-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;}
+  .countdown-card.prova{border-color:var(--rust);background:#fdf5f2;}
+  .countdown-card.prova::before{background:var(--rust);}
+  .countdown-card.apres{border-color:var(--amber);background:#fdf8ec;}
+  .countdown-card.apres::before{background:var(--amber-light);}
+  .countdown-card.entrega{border-color:var(--forest);background:#f2f8f4;}
+  .countdown-card.entrega::before{background:var(--forest);}
+  .countdown-card h3{font-family:'Playfair Display',serif;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:4px;}
+  .countdown-card.prova h3{color:var(--rust);}
+  .countdown-card.apres h3{color:var(--amber);}
+  .countdown-card.entrega h3{color:var(--forest);}
+  .countdown-days{font-family:'Playfair Display',serif;font-size:26px;font-weight:900;line-height:1;}
+  .countdown-card.prova .countdown-days{color:var(--rust);}
+  .countdown-card.apres .countdown-days{color:var(--amber);}
+  .countdown-card.entrega .countdown-days{color:var(--forest);}
+  .countdown-sub{font-size:11px;color:var(--ink-light);margin-top:2px;font-style:italic;}
+
+  /* LEGEND */
+  .legend{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:22px;font-size:12px;}
+  .legend-item{display:flex;align-items:center;gap:6px;}
+  .legend-dot{width:12px;height:12px;border-radius:2px;flex-shrink:0;}
+
+  /* FASE LABEL */
+  .fase-label{font-family:'Playfair Display',serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:2px;color:var(--sepia);margin:0 0 6px 2px;padding:4px 10px;border-left:3px solid var(--sepia);background:var(--paper-dark);display:inline-block;}
+
+  /* MONTH */
+  .month-block{margin-bottom:32px;}
+  .month-title{font-family:'Playfair Display',serif;font-size:22px;font-weight:900;color:var(--ink);border-bottom:1.5px solid var(--sepia);padding-bottom:6px;margin-bottom:10px;letter-spacing:-0.3px;}
+  .week-header{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:3px;}
+  .week-header div{text-align:center;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--ink-light);padding:4px 0;}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px;}
+
+  /* CELLS */
+  .day-cell{min-height:82px;background:white;border:1px solid var(--grid-line);border-radius:3px;padding:6px 7px;cursor:default;position:relative;transition:transform 0.1s ease,box-shadow 0.1s ease;overflow:hidden;}
+  .day-cell.has-task{cursor:pointer;}
+  .day-cell.has-task:hover{transform:translateY(-2px);box-shadow:0 4px 12px var(--shadow);z-index:2;}
+  .day-cell.empty{background:var(--paper);border-color:transparent;}
+  .day-cell.today{border-color:var(--sepia);border-width:2px;}
+  .day-cell.done{background:var(--done-bg);border-color:var(--done-border);}
+  .day-cell.done .day-title{text-decoration:line-through;opacity:0.6;}
+  .day-cell.blocked{background:var(--blocked-bg);border-color:var(--blocked);cursor:not-allowed;}
+  .day-cell.type-prova{border-top:3px solid var(--rust);}
+  .day-cell.type-trabalho{border-top:3px solid var(--forest);}
+  .day-cell.type-ambos{border-top:3px solid var(--amber-light);}
+  .day-cell.type-deadline{border:2px solid var(--deadline);border-top:4px solid var(--deadline);background:#fff5f5;}
+  .day-cell.type-apresentacao{border:2px solid var(--amber);border-top:4px solid var(--amber);background:#fffbf0;}
+  .day-cell.type-simulado{border-top:3px solid var(--slate);}
+
+  .day-num{font-family:'Playfair Display',serif;font-size:16px;font-weight:700;color:var(--ink-light);line-height:1;display:flex;align-items:center;gap:5px;margin-bottom:4px;}
+  .aula-dot{width:6px;height:6px;border-radius:50%;background:var(--slate);flex-shrink:0;}
+  .day-title{font-size:11px;line-height:1.3;color:var(--ink);font-weight:600;}
+  .day-tag{position:absolute;bottom:5px;right:5px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;padding:2px 5px;border-radius:2px;}
+  .tag-prova{background:var(--rust);color:white;}
+  .tag-trabalho{background:var(--forest);color:white;}
+  .tag-ambos{background:var(--amber-light);color:white;}
+  .tag-deadline{background:var(--deadline);color:white;}
+  .tag-apresentacao{background:var(--amber);color:white;}
+  .tag-simulado{background:var(--slate);color:white;}
+  .tag-bloqueado{background:var(--blocked);color:white;}
+  .done-check{position:absolute;top:5px;right:5px;font-size:14px;line-height:1;color:var(--forest-mid);}
+
+  /* MODAL */
+  .modal-overlay{display:none;position:fixed;inset:0;background:rgba(26,20,16,0.55);z-index:1000;align-items:center;justify-content:center;padding:16px;}
+  .modal-overlay.open{display:flex;}
+  .modal{background:var(--paper);border-radius:6px;max-width:560px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(26,20,16,0.4);border:1px solid var(--grid-line);animation:modalIn 0.2s ease;}
+  @keyframes modalIn{from{opacity:0;transform:translateY(16px) scale(0.97);}to{opacity:1;transform:translateY(0) scale(1);}}
+  .modal-header{padding:18px 20px 14px;border-bottom:1.5px solid var(--grid-line);display:flex;justify-content:space-between;align-items:flex-start;gap:12px;}
+  .modal-date{font-family:'Playfair Display',serif;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--ink-light);margin-bottom:3px;}
+  .modal-title{font-family:'Playfair Display',serif;font-size:19px;font-weight:900;color:var(--ink);line-height:1.2;}
+  .modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink-light);flex-shrink:0;padding:0;line-height:1;}
+  .modal-close:hover{color:var(--ink);}
+  .modal-body{padding:16px 20px 20px;}
+  .modal-badges{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;}
+  .badge{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:0.8px;padding:3px 8px;border-radius:3px;}
+  .badge-prova{background:var(--rust);color:white;}
+  .badge-trabalho{background:var(--forest);color:white;}
+  .badge-ambos{background:var(--amber-light);color:white;}
+  .badge-deadline{background:var(--deadline);color:white;}
+  .badge-apresentacao{background:var(--amber);color:white;}
+  .badge-aula{background:var(--slate);color:white;}
+  .badge-simulado{background:var(--slate-light);color:white;}
+  .modal-section-title{font-family:'Playfair Display',serif;font-size:13px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--sepia);margin-bottom:8px;margin-top:14px;}
+  .modal-topics{list-style:none;}
+  .modal-topics li{padding:5px 0 5px 16px;border-bottom:1px solid var(--paper-dark);font-size:14px;position:relative;line-height:1.4;}
+  .modal-topics li:last-child{border-bottom:none;}
+  .modal-topics li::before{content:'◦';position:absolute;left:0;color:var(--sepia);font-size:14px;top:5px;}
+  .modal-tip{background:#fef9ec;border-left:3px solid var(--amber-light);padding:10px 14px;margin-top:14px;border-radius:0 3px 3px 0;font-size:13px;font-style:italic;color:var(--ink-light);line-height:1.5;}
+  .modal-tip strong{font-style:normal;font-weight:700;color:var(--amber);text-transform:uppercase;font-size:10px;letter-spacing:0.8px;display:block;margin-bottom:4px;}
+  .modal-done-btn{display:block;width:100%;margin-top:18px;padding:11px;border-radius:4px;border:none;font-family:'Playfair Display',serif;font-size:14px;font-weight:700;cursor:pointer;transition:background 0.15s ease;}
+  .modal-done-btn.not-done{background:var(--forest);color:white;}
+  .modal-done-btn.not-done:hover{background:var(--forest-mid);}
+  .modal-done-btn.is-done{background:var(--done-bg);color:var(--forest);border:1.5px solid var(--done-border);}
+  .modal-done-btn.is-done:hover{background:#c8e0c0;}
+
+  @media(max-width:600px){
+    .day-cell{min-height:60px;padding:4px;}
+    .day-num{font-size:13px;}
+    .day-title{font-size:9.5px;}
+    .day-tag{font-size:8px;padding:1px 3px;}
+    .week-header div{font-size:9px;}
+  }
+</style>
+</head>
+<body>
+<div class="wrapper">
+
+<header>
+  <h1>Caixa de Transmissão Baja SAE</h1>
+  <p>FTF-023 Elementos de Máquinas II · UFAM/FT · Prof. Thiago Batista · Cronograma completo do trabalho</p>
+</header>
+
+<div class="countdowns">
+  <div class="countdown-card prova">
+    <h3>⚙ Prova 2 — Engrenagens</h3>
+    <div class="countdown-days" id="cd-prova">—</div>
+    <div class="countdown-sub">Terça, 09/06/2026</div>
+  </div>
+  <div class="countdown-card apres">
+    <h3>🎤 Apresentação Final</h3>
+    <div class="countdown-days" id="cd-apres">—</div>
+    <div class="countdown-sub">Terça, 30/06/2026 · 12–15 min</div>
+  </div>
+  <div class="countdown-card entrega">
+    <h3>📐 Entrega do Relatório</h3>
+    <div class="countdown-days" id="cd-entrega">—</div>
+    <div class="countdown-sub">Quarta, 08/07/2026 (prazo max.)</div>
+  </div>
+</div>
+
+<div class="progress-section">
+  <div class="progress-label">Progresso geral</div>
+  <div class="progress-bar-wrap"><div class="progress-bar-fill" id="progress-fill" style="width:0%"></div></div>
+  <div class="progress-pct"><span id="progress-pct-text">0</span>% concluído</div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:var(--rust)"></div> Prova</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--forest)"></div> Trabalho</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--amber-light)"></div> Prova + Trabalho</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--deadline)"></div> Deadline</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--amber)"></div> Apresentação</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--slate)"></div> Aula (Ter/Qui)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--blocked-bg);border:1.5px solid var(--blocked)"></div> Bloqueado</div>
+  <div class="legend-item"><div class="legend-dot" style="background:var(--done-bg);border:1.5px solid var(--done-border)"></div> Concluído</div>
+</div>
+
+<div id="cal-container"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-date" id="modal-date"></div>
+        <div class="modal-title" id="modal-title"></div>
+      </div>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-badges" id="modal-badges"></div>
+      <div class="modal-section-title">Tarefas do dia</div>
+      <ul class="modal-topics" id="modal-topics"></ul>
+      <div id="modal-tip-wrap"></div>
+      <button class="modal-done-btn not-done" id="modal-done-btn">✓ Marcar como concluído</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── DIAS DE AULA OFICIAIS (Ter + Qui) ───────────────────────────────────────
+const AULA_DAYS = new Set([
+  '2026-06-02','2026-06-04','2026-06-09','2026-06-11',
+  '2026-06-16','2026-06-18','2026-06-23','2026-06-25',
+  '2026-06-30','2026-07-02','2026-07-07'
+]);
+
+// Dias bloqueados (sem disponibilidade)
+const BLOCKED = new Set(['2026-06-06','2026-06-07']);
+
+// ─── DADOS DO CRONOGRAMA ──────────────────────────────────────────────────────
+const DAYS_DATA = {
+
+  // ══════════════════════════════════════════════════════
+  // FASE 1 — PROVA 2 (01–09/jun)
+  // ══════════════════════════════════════════════════════
+
+  '2026-06-01': {
+    title: 'Geometria & Tipos de Engrenagens',
+    type:'prova', tag:'Prova', fase:'Fase 1 — Prova',
+    topics:[
+      'Conceito geral: transmissão de movimento e força entre eixos',
+      'Tipos: cilíndricas retas, helicoidais, cônicas, sem-fim/coroa, planetárias',
+      'Terminologia: módulo m, passo P, número de dentes N, ângulo de pressão φ',
+      'Diâmetro primitivo: d = m·N (SI) / d = N/P (pol)',
+      'Relação de transmissão: i = N₂/N₁ = ω₁/ω₂',
+      'Lei do engrenamento; interferência; número mínimo de dentes',
+      '→ Relevância para o trabalho: você usará retas (3 marchas + ré) e cônicas (saída frontal 1:1)',
+    ],
+    tip:'Comece pela geometria — é a base de todo o projeto da caixa. Já leia o roteiro do trabalho hoje para ter o contexto em mente.',
+  },
+
+  '2026-06-02': {
+    title: 'Aula + Forças em Eng. Retas',
+    type:'prova', tag:'Prova',
+    topics:[
+      '📚 AULA (terça) — Aula 22: Engrenagens cilíndricas pp. 781–786',
+      'W_t = T/(d/2) = H/V ; W_r = W_t·tan(φ) ; sem componente axial em retas',
+      'Potência: H = W_t·V ; velocidade primitiva V = π·d·n/60',
+      'Exercícios numéricos: calcular W_t, W_r e reações de mancal para par de retas',
+      'Perguntar ao professor: quais capítulos exatos caem na Prova 2',
+      '→ Trabalho: as engrenagens das 3 marchas e ré são todas retas — esse cálculo de força será usado diretamente',
+    ],
+    tip:'Aula hoje — anote tudo sobre força em retas. Será copiado direto para o memorial de cálculo do trabalho.',
+  },
+
+  '2026-06-03': {
+    title: 'Forças — Cônicas & Helicoidais',
+    type:'prova', tag:'Prova',
+    topics:[
+      'Cônicas: W_r = W_t·tan(φ)·cos(γ) ; W_a = W_t·tan(φ)·sen(γ)',
+      'Ângulo de passo cônico γ ; relação i = tan(γ_coroa)/tan(γ_pinhão)',
+      'Helicoidais: W_t, W_r, W_a com φ_n, φ_t e ângulo hélice ψ',
+      'Sem-fim: 6 componentes; eficiência η; velocidade de deslizamento V_S',
+      'Exercícios resolvidos — Aula 14 (cônicas + helicoidais)',
+      '→ Trabalho: as cônicas de saída frontal são 1:1 — calcular forças e reações do mancal desse par',
+    ],
+    tip:'Faça os três tipos em sequência comparando os padrões. Cônicas são obrigatórias no trabalho.',
+  },
+
+  '2026-06-04': {
+    title: 'Aula + Lewis & Falhas',
+    type:'prova', tag:'Prova',
+    topics:[
+      '📚 AULA (quinta) — tirar dúvidas de força e iniciar Lewis',
+      'Modos de falha: quebra na raiz, pitting, desgaste, esmagamento superficial (Aula 15)',
+      'Equação de Lewis: σ = W_t·P/(F·Y) — fator de forma Y pela tabela de N dentes',
+      'Lewis corrigida: fatores K_v (dinâmico), K_s (tamanho), K_o (sobrecarga)',
+      'Durabilidade superficial — tensão de Hertz',
+      '→ Trabalho: Lewis corrigida será o método de verificação inicial antes do AGMA',
+    ],
+    tip:'Aula — perguntar ao professor se o trabalho exige AGMA completo ou se Lewis corrigida é suficiente para as engrenagens retas.',
+  },
+
+  '2026-06-05': {
+    title: 'AGMA Completo + Exercícios',
+    type:'prova', tag:'Prova',
+    topics:[
+      'Metodologia AGMA (Aula 16): dimensionamento industrial completo',
+      'Tensão flexional: σ = W_t·K_o·K_v·K_s·(1/b·m_t)·(K_H·K_B/Y_J) [SI]',
+      'Fatores: K_o sobrecarga, K_v dinâmico, K_s tamanho, K_m dist. carga, K_B aro',
+      'Fatores geométricos J (flexão) e I (contato) — leitura nos gráficos AGMA',
+      'Resistência admissível flexão: σ_all = (S_t/S_F)·(Y_N/(K_T·K_R))',
+      'Resistência admissível contato: σ_H,all = (S_c/S_H)·(Z_N·C_H/(K_T·K_R))',
+      'Exercícios completos Aula 17 — dimensionar m e verificar F',
+    ],
+    tip:'⚡ AGMA é o coração da prova E do trabalho. Monte uma lista mental dos fatores com definição.',
+  },
+
+  // 06 e 07/jun — BLOQUEADOS (já tratados como blocked)
+
+  '2026-06-08': {
+    title: 'Simulado + Revisão Final',
+    type:'prova', tag:'Simulado',
+    topics:[
+      '⏱ SIMULADO de 2h em condições reais (sem consulta)',
+      'Cobrir: geometria, forças (retas + cônicas), Lewis corrigida, AGMA completo',
+      'Após o simulado: corrigir cada item e anotar erros',
+      'Revisão cirúrgica dos pontos fracos identificados',
+      'Checar: tabela Y de Lewis, gráficos J e I, fatores K de memória',
+      'Preparar material para amanhã: calculadora, régua, lápis',
+    ],
+    tip:'Dia duplo: simulado de manhã/tarde + revisão cirúrgica à noite. Você perdeu sábado e domingo — recupere aqui. Durma cedo.',
+  },
+
+  '2026-06-09': {
+    title: '🔴 PROVA 2 — ENGRENAGENS',
+    type:'deadline', tag:'Deadline',
+    topics:[
+      '📅 PROVA 2 — Elementos de Máquinas II (aula 23)',
+      'Conteúdo: Engrenagens cilíndricas pp. 740–786 + Visão geral pp. 680–726',
+      'Leia o enunciado completo antes de calcular qualquer coisa',
+      'Identifique o tipo de engrenagem em cada problema',
+      'Mostre equações, valores e unidades em cada passo',
+      'Após a prova: foco total no trabalho a partir de hoje',
+    ],
+    tip:'Você estudou. Leia, organize, execute. Boa prova! 💪',
+  },
+
+  // ══════════════════════════════════════════════════════
+  // FASE 2 — PROJETO + OVERLEAF PARALELO (10–19/jun)
+  // Regra: calcular → já jogar no Overleaf no mesmo dia
+  // ══════════════════════════════════════════════════════
+
+  '2026-06-10': {
+    title: 'Kickoff + Esqueleto Overleaf',
+    type:'trabalho', tag:'Trabalho', fase:'Fase 2 — Projeto',
+    topics:[
+      '── ANÁLISE ──────────────────────────────────────',
+      'Leitura integral do roteiro — anotar os 9 capítulos obrigatórios com seus pesos',
+      'Parâmetros do motor: P ≈ 7,5 kW, T_max ≈ 18,3 N·m, faixa 2000–3800 rpm',
+      'Definir arquitetura: eixo entrada → intermediário → saída traseira + cônicas 1:1 saída frontal',
+      'Escolher relações de transmissão tentativas: i₁≈3,5 | i₂≈2,0 | i₃≈1,2 | i_ré≈3,5',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Criar projeto no Overleaf: "Caixa_Transmissao_EM2_2026"',
+      '📄 Montar main.tex: preâmbulo ABNT, \input de cada capítulo, referencias.bib',
+      '📄 Criar arquivos vazios: introducao.tex, objetivos.tex, descricao.tex, caracteristicas.tex, memorial.tex, visualizacao.tex, conclusao.tex, apendice.tex',
+      '📄 Preencher capa: nome, disciplina FTF-023, Prof. Thomas Botelho, UFAM, 2026',
+      '📄 Em introducao.tex: escrever rascunho dos 2 primeiros parágrafos — por que Baja SAE precisa de caixa de transmissão',
+    ],
+    tip:'O esqueleto do Overleaf leva ~1h e elimina 100% da angústia de formatação depois. Cada dia você só abre o .tex certo e cola o que calculou.',
+  },
+
+  '2026-06-11': {
+    title: 'Aula + Relações de Transmissão → Overleaf',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '── ANÁLISE ──────────────────────────────────────',
+      '📚 AULA (quinta) — tirar dúvidas sobre arquitetura com o professor',
+      'Fechar as relações de transmissão das 4 marchas (valores definitivos)',
+      'Calcular torque e rotação em cada eixo para cada marcha',
+      'Verificar velocidade final do veículo: v = π·d_pneu·n_saída/60 (meta: ~60 km/h na 3ª)',
+      'Calcular eficiência total: η_total = η_par1 × η_par2 × η_cônicas',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Em caracteristicas.tex: seção "Relações de Transmissão" — inserir tabela com i, n e T por marcha',
+      '📄 Em memorial.tex: seção 1 "Parâmetros do Motor" — tabela com P, T_max, n_max, n_operação',
+      '📄 Em memorial.tex: seção 2 "Cinemática da Caixa" — equações de torque/rotação em cada eixo',
+      '📄 Adicionar entradas no referencias.bib: Shigley (cap.8 e 13), Almeida/Fonseca/Barbieri',
+    ],
+    tip:'A tabela de relações de transmissão é a primeira coisa que a banca vai olhar. Deixe ela pronta e bonita hoje.',
+  },
+
+  '2026-06-12': {
+    title: 'Biblio + Fundamentação Teórica → Overleaf',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '── PESQUISA ─────────────────────────────────────',
+      'Google Scholar: "Baja SAE gearbox design", "spur gear AGMA 2101 dimensioning"',
+      'Salvar ≥ 3 artigos (ASME/SAE) + Shigley cap. 13 + Almeida/Fonseca cap. engrenagens',
+      'Normas: AGMA 2101-D04 (SI) e ISO 6336 como referências complementares',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Em introducao.tex: completar introdução (300–400 palavras) — motivos p/ caixa, não definição',
+      '📄 Em objetivos.tex: Objetivo Geral + 4–5 Objetivos Específicos (um por subsistema)',
+      '📄 Em descricao.tex: escrever seção "Engrenagens Cilíndricas Retas" — função e localização na caixa',
+      '📄 Em descricao.tex: escrever seção "Engrenagens Cônicas" — função no diferencial de saída frontal',
+      '📄 Adicionar os artigos ao referencias.bib com chaves @article{} completas',
+    ],
+    tip:'Pesquisa e redação no mesmo dia — enquanto você lê o artigo, já cola a ideia no Overleaf. Não deixe o conhecimento "evaporar".',
+  },
+
+  '2026-06-13': {
+    title: 'AGMA 1ª Marcha → Overleaf Memorial',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '── CÁLCULO ──────────────────────────────────────',
+      'AGMA da 1ª marcha (par mais crítico — maior torque):',
+      '  → Módulo m: testar m=2 e m=2,5 mm ; N_pinhão ≥ 17 ; N_coroa = i₁·N_p',
+      '  → W_t = 2·T/(d_p) ; calcular K_o, K_v, K_s, K_m, K_B da tabela AGMA',
+      '  → Verificar σ_flexão ≤ σ_all e σ_contato ≤ σ_H,all',
+      '  → Anotar: m final, N_p, N_c, d_p, d_c, F, SF_flex, SF_cont',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Em memorial.tex: seção 3 "Engrenagens" — subseção "1ª Marcha"',
+      '📄 Inserir equações AGMA numeradas (\begin{equation}...\label{eq:agma-flex})',
+      '📄 Tabela de fatores AGMA usados (K_o, K_v, K_s, K_m, K_B, J, I) com valores e fontes',
+      '📄 Resultado final: tabela com os parâmetros geométricos + SFs obtidos',
+    ],
+    tip:'Cole a conta no Overleaf enquanto ainda está fresca. Amanhã você vai agradecer por não ter que reescrever do zero.',
+  },
+
+  '2026-06-14': {
+    title: 'AGMA 2ª/3ª/Ré/Cônicas → Overleaf',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '── CÁLCULO ──────────────────────────────────────',
+      'Repetir verificação AGMA para 2ª e 3ª marchas (mesmo módulo da 1ª — só checar SF)',
+      'Ré: adicionar engrenagem louca (idler), N_louca ≥ 17, verificar AGMA do idler',
+      'Cônicas 1:1: γ = 45°, W_r = W_t·tan(φ)·cos(45°), W_a = W_t·tan(φ)·sen(45°)',
+      'Fechar tabela-resumo de TODAS as engrenagens: m, N, d, F, σ/σ_all, SF',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Em memorial.tex: subseções "2ª Marcha", "3ª Marcha", "Ré", "Cônicas" — inserir resultados (sem repetir metodologia, só tabelas e SFs)',
+      '📄 Tabela geral de engrenagens: uma linha por par, colunas = m | N_p | N_c | d_p | d_c | F | SF_flex | SF_cont',
+      '📄 Em descricao.tex: completar seção de engrenagens — agora com os parâmetros reais definidos',
+      '📄 Em caracteristicas.tex: seção "Material das Engrenagens" — justificar SAE 1045/4340, S_t, S_c, HB',
+    ],
+    tip:'A tabela geral de engrenagens é o coração do memorial. Bem feita, responde 80% das perguntas da banca sobre engrenagens.',
+  },
+
+  '2026-06-15': {
+    title: 'DCL dos Eixos → Overleaf Memorial',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '── CÁLCULO ──────────────────────────────────────',
+      'DCL de cada eixo: marcar W_t, W_r, W_a de cada engrenagem + reações R_A, R_B',
+      'Calcular M(x) e T em cada eixo: traçar diagramas, identificar seção crítica',
+      'Equação DE-Goodman: d_min = [16·n/π · √((8·K_f·M_a/S_e)² + (8·K_fm·T_m/S_ut)²)]^(1/3)',
+      'Fatores: K_f = 1 + q·(K_t − 1), S_e = 0,5·S_ut (estimativa inicial)',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Em memorial.tex: seção 4 "Eixos" — subseção por eixo (entrada, intermediário, saída)',
+      '📄 Inserir figura do DCL de cada eixo (\includegraphics ou TikZ esquemático)',
+      '📄 Equações de Goodman numeradas; tabela de resultados: M_max, T, K_f, d_min obtido',
+      '📄 Em descricao.tex: seção "Eixos" — descrever função, material (SAE 1045), posição na caixa',
+    ],
+    tip:'Mesmo um esboço feito no papel fotografado já serve como figura no Overleaf hoje. Refina com CAD depois.',
+  },
+
+  '2026-06-16': {
+    title: 'Aula + Chavetas & Deflexão → Overleaf',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '── CÁLCULO ──────────────────────────────────────',
+      '📚 AULA (terça) — levar DCLs para o professor revisar',
+      'Verificação por deflexão: θ ≤ 0,0005–0,001 rad nos apoios (Shigley eq. 7-18)',
+      'Chavetas DIN 6885: τ = 2T/(d·w·l) ≤ S_sy ; σ_c = 4T/(d·h·l) ≤ S_y/2',
+      'Definir estrias: número de dentes, perfil (involuta 30° ou retilíneo), comprimento de engate',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Em memorial.tex: subseção "Verificação de Deflexão" — equação + θ obtido × θ_adm',
+      '📄 Em memorial.tex: subseção "Chavetas" — dimensionamento do par mais carregado + tabela dos demais',
+      '📄 Em descricao.tex: seções "Chavetas" e "Estrias" — função, localização, dimensões adotadas',
+      '📄 Em caracteristicas.tex: "Posicionamento Axial" — anéis seeger, espaçadores, porcas de eixo',
+    ],
+    tip:'Aula — perguntar ao professor se aceita deflexão calculada pela equação de viga ou exige método de energia (Castigliano).',
+  },
+
+  '2026-06-17': {
+    title: 'Mancais + Sist. Mudança → Overleaf',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '── CÁLCULO ──────────────────────────────────────',
+      'Carga equivalente: P = X·F_r + Y·F_a para cada rolamento (X,Y do catálogo SKF)',
+      'Vida: L₁₀ = (C/P)^p → L₁₀_h = L₁₀·10⁶/(60·n) — meta ≥ 1000 h',
+      'Selecionar código do rolamento: série 6200 (retas) / série 320xx (cônicas com carga axial)',
+      'Definir sistema de mudança: garfo seletor + sincronizador + manga de engate + atuação',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Em memorial.tex: seção 5 "Mancais" — P calculado, C necessário, código SKF, L₁₀_h',
+      '📄 Tabela de mancais: posição | F_r | F_a | P | C_cat | código | L₁₀_h',
+      '📄 Em descricao.tex: seção "Mancais e Rolamentos" — tipo, localização fixa/flutuante',
+      '📄 Em descricao.tex: seção "Sistema de Mudança de Velocidades" — princípio do sincronizador, garfo, trilho',
+      '📄 Em caracteristicas.tex: "Conexão nas Extremidades" — flange ou cruzeta, justificativa',
+    ],
+    tip:'A seção de mancais é rápida de escrever mas impressiona — tabela com código SKF real mostra que o projeto é concreto, não teórico.',
+  },
+
+  '2026-06-18': {
+    title: 'Aula + Carcaça/Lubrif. → Overleaf',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '── ANÁLISE ──────────────────────────────────────',
+      '📚 AULA (quinta) — tirar dúvidas sobre carcaça e detalhes construtivos',
+      'Carcaça: alumínio fundido (leve, Baja) vs ferro fundido — justificar a escolha',
+      'Layout: 3 saídas (2 semieixos traseiros + 1 cardan frontal) + entrada do motor',
+      'Lubrificação: banho de óleo ISO VG 80W-90, nível = 1 módulo abaixo do dente',
+      'Vedação: retentores de lábio radial nas saídas + junta de papel/silicone nas tampas',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Em descricao.tex: seção "Carcaça" — material, forma, pontos de montagem',
+      '📄 Em caracteristicas.tex: "Lubrificação e Vedação" — tipo de óleo, nível, retentores',
+      '📄 Em caracteristicas.tex: "Características Construtivas" — compacidade, acesso para manutenção',
+      '📄 Em caracteristicas.tex: "Acoplamento com o Motor" — tipo de flange, centragem, parafusos',
+    ],
+    tip:'Carcaça de alumínio no Baja SAE é diferencial técnico. Mencione a redução de peso no capítulo de Características — a banca valoriza.',
+  },
+
+  '2026-06-19': {
+    title: 'Consolidar Memorial + Verificação Global',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '── CÁLCULO ──────────────────────────────────────',
+      'Verificação global de potência: P_entrada × η_total = P_saída (cada marcha)',
+      'η_total = η_retas^n_pares × η_cônicas — conferir com valores calculados',
+      'Checar consistência: torques e rotações em cada eixo batem com as relações de transmissão?',
+      'Montar planilha-resumo completa: todos os SFs em um só lugar',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Em memorial.tex: seção 6 "Verificação Global" — tabela de η por par + η_total + P_saída',
+      '📄 Revisar numeração de todas as equações: estão seguindo \label{eq:...}?',
+      '📄 Revisar todas as tabelas: legenda ACIMA (\caption antes de \begin{tabular})',
+      '📄 Revisar todas as figuras: legenda ABAIXO (\caption depois de \includegraphics)',
+      '📄 Conferir citações: cada afirmação técnica tem \cite{}? Referencias.bib tem entrada para cada \cite?',
+      '📄 Compilar o Overleaf e corrigir todos os erros de compilação antes de continuar',
+    ],
+    tip:'⚠️ Compilar hoje sem erros é crítico. Um erro de LaTeX que fica acumulando por dias vira pesadelo na semana de entrega.',
+  },
+
+  // ══════════════════════════════════════════════════════
+  // FASE 3 — CAD + FINALIZAÇÃO DO OVERLEAF (20–27/jun)
+  // ══════════════════════════════════════════════════════
+
+  '2026-06-20': {
+    title: 'CAD Engrenagens + Overleaf Visualização',
+    type:'trabalho', tag:'Trabalho', fase:'Fase 3 — CAD & Finalização',
+    topics:[
+      '── CAD ──────────────────────────────────────────',
+      'Desenhar engrenagens retas: vista frontal + lateral, cotas (d_p, d_c, F, m, φ)',
+      'Bloco de título: nome, disciplina FTF-023, data, escala, folha A4/A3',
+      'Meta: 3 marchas + ré + louca = 5 pares desenhados hoje',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Exportar cada desenho como PDF → fazer upload na pasta "cad/" do Overleaf',
+      '📄 Em apendice.tex: inserir desenhos com \includepdf[pages=-]{cad/eng_1a_marcha.pdf}',
+      '📄 Em visualizacao.tex: inserir imagem do conjunto de engrenagens (render ou foto do CAD)',
+      '📄 Em caracteristicas.tex: "Características Geométricas" — referenciar os desenhos do apêndice',
+    ],
+    tip:'Upload do PDF do CAD direto no Overleaf e \includepdf — pronto. O apêndice vai se montando sozinho a cada desenho feito.',
+  },
+
+  '2026-06-21': {
+    title: 'CAD Eixos/Cônicas + Overleaf Apêndice',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '── CAD ──────────────────────────────────────────',
+      'Eixos: vista longitudinal com degraus, filetes, chavetas, tolerâncias (H7/r6)',
+      'Cônicas: geometria cônica, γ = 45°, módulo e número de dentes cotados',
+      'Vista explodida da caixa completa (obrigatória no roteiro)',
+      'Meta: todos os 4 eixos + par cônico + vista explodida',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Upload e \includepdf de cada eixo e cônicas em apendice.tex',
+      '📄 Em visualizacao.tex: inserir a vista explodida com legenda identificando cada componente',
+      '📄 Em apendice.tex: numerar os desenhos — "Desenho A-1: Eixo de Entrada", "Desenho A-2: Eixo Intermediário"...',
+      '📄 Compilar e verificar se os PDFs estão aparecendo corretamente no apêndice',
+    ],
+    tip:'Vista explodida vale mais que dez slides de apresentação. Se ficar boa, use-a também no slide de visualização.',
+  },
+
+  '2026-06-22': {
+    title: 'Características da Solução → Overleaf',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '── OVERLEAF (dia focado em escrita) ────────────',
+      '📄 Em caracteristicas.tex: completar a seção mais importante (peso 2,0 pts):',
+      '  → "Hipóteses Adotadas": η, S_F_min, material, ciclos de vida, tipo de carga',
+      '  → "Justificativas de Projeto": por que retas (simplicidade, Baja não precisa de silêncio)?',
+      '  → "Por que esse módulo?": relação entre m, d_p e espaço disponível na carcaça',
+      '  → "Materiais e Tratamento Térmico": SAE 1045 normalizado ou 4340 cementado',
+      '  → "Características de Operação": tabela rpm/torque/velocidade por marcha',
+      '  → "Características Construtivas": compacidade, peso estimado, forma de montagem',
+      'Meta: seção Características completa hoje — é onde a nota é ganha ou perdida',
+    ],
+    tip:'Esta seção (2,0 pts) é maior que Eixos + Mancais juntos na nota. Justifique CADA escolha: "escolheu-se X porque Y". Sem isso, parece achismo.',
+  },
+
+  '2026-06-23': {
+    title: 'Aula + Conclusão/Referências → Overleaf',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '📚 AULA (terça) — última chance de tirar dúvida técnica com o professor',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Em conclusao.tex: Conclusões (0,5 pts) — síntese dos SFs obtidos, se o projeto é viável, limitações',
+      '📄 Em referencias.bib: conferir TODAS as entradas — autor, título, editora, ano, página',
+      '  → Shigley: @book{budynas2016, ...}',
+      '  → Almeida/Fonseca/Barbieri: @book{almeida2011, ...}',
+      '  → AGMA: @techreport{agma2101, ...}',
+      '  → Artigos SAE/ASME: @article{...}',
+      '📄 Compilar com bibtex: verificar se todas as citações \cite{} aparecem na lista de referências',
+      '📄 Revisão geral do texto: tom técnico, terceira pessoa ("calculou-se", "verificou-se")',
+    ],
+    tip:'Aula — confirmar com o professor o canal de entrega e se é exigida versão impressa além do PDF.',
+  },
+
+  '2026-06-24': {
+    title: 'Visualização + Revisão Final → Overleaf',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Em visualizacao.tex (peso 1,0 pt): inserir ≥ 3 figuras de qualidade:',
+      '  → Vista explodida da caixa (do CAD)',
+      '  → Esquema cinemático com todos os eixos e engrenagens identificados',
+      '  → Render ou modelo 3D se disponível',
+      '📄 Legendas descritivas em cada figura: "Figura X — Vista explodida da caixa de transmissão Baja SAE 4×4"',
+      '📄 Revisão completa do documento: ler do início ao fim em voz alta',
+      '📄 Checar checklist final:',
+      '  ✓ Todos os 9 capítulos do roteiro presentes',
+      '  ✓ Todas as equações numeradas e referenciadas no texto',
+      '  ✓ Todas as tabelas com legenda ACIMA e fonte ABAIXO',
+      '  ✓ Todas as figuras com legenda ABAIXO e fonte',
+      '  ✓ Apêndice com TODOS os desenhos CAD',
+      '📄 Gerar PDF final → salvar como Trabalho_EM2_[SeuNome]_2026.pdf',
+    ],
+    tip:'Use o roteiro como checklist linha por linha. Cada item não coberto é nota perdida — é simples assim.',
+  },
+
+  '2026-06-25': {
+    title: 'Aula + Buffer & Correções Finais',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '📚 AULA (quinta) — levar PDF impresso ou no notebook para o professor dar feedback informal',
+      '── OVERLEAF ─────────────────────────────────────',
+      '📄 Dia de buffer: corrigir qualquer problema que surgiu na revisão de ontem',
+      '📄 Ajustar formatação: margens 3/2/2,5/2 cm, espaçamento 1,5, fonte Times 12',
+      '📄 Verificar sumário automático (\tableofcontents) — seções aparecem corretamente?',
+      '📄 Numeração de páginas: apêndice pode usar numeração em letras (A-1, A-2…)',
+      '📄 Arquivo final: compilar 2× (pdfLaTeX → BibTeX → pdfLaTeX → pdfLaTeX) para referências corretas',
+      '📄 Backup: Google Drive + pen drive + repositório GitHub privado',
+      'Meta: relatório 100% pronto e em PDF antes da noite',
+    ],
+    tip:'Último dia de aula. Relatório fechado hoje = cabeça livre para ensaiar a apresentação nos próximos 4 dias.',
+  },
+
+  '2026-06-26': {
+    title: 'Slides — Estrutura + Conteúdo',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '🎤 FASE 4 — APRESENTAÇÃO',
+      'Estrutura dos slides (10–12 para 12–15 min):',
+      '  1. Capa · 2. Objetivo · 3. Por que Baja precisa de caixa (motivação)',
+      '  4. Arquitetura da caixa (figura esquemática)',
+      '  5. Relações de transmissão (tabela i/n/T por marcha)',
+      '  6. Engrenagens — tabela de resultados (m, N, SF)',
+      '  7. Eixos — DCL do mais crítico + d obtido',
+      '  8. Mancais — tabela de seleção (código SKF + L₁₀_h)',
+      '  9. Sistema de mudança de velocidades (esquema)',
+      '  10. Visualização — vista explodida do CAD',
+      '  11. Resultados gerais (η_total, velocidades, pesos)',
+      '  12. Conclusões',
+      'Regra: 1 ideia por slide | fonte ≥ 28pt | figuras do Overleaf/CAD nos slides',
+      'Penalidade: 0,5 pt/min fora de 12–15 min — gerenciar tempo = 20% da nota',
+    ],
+    tip:'Reutilize as figuras e tabelas já prontas no Overleaf. Copie-as para os slides — zero retrabalho.',
+  },
+
+  '2026-06-27': {
+    title: 'Ensaio Cronometrado',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '🎤 Ensaio completo — meta: 13–14 minutos exatos',
+      'Gravar em vídeo ou ensaiar com colega',
+      'Preparar respostas para perguntas típicas da banca:',
+      '  → "Por que escolheu esse módulo?" → "Por que retas e não helicoidais?"',
+      '  → "Qual o SF da engrenagem mais crítica?" → "Como funciona o sincronizador?"',
+      '  → "Como a carga axial das cônicas chega ao mancal?"',
+      '  → "Se a vida útil exigida dobrasse, o que mudaria?"',
+      'Ajustar slides com base no ensaio: cortar o que trava, ampliar o que é raso',
+      'Preparar equipamento: notebook + pen drive backup + cabo HDMI/VGA',
+    ],
+    tip:'O tempo é 20% da nota. Quem ensaia 2 vezes cronometrado raramente extrapola. Quem não ensaia, quase sempre extrapola.',
+  },
+
+  // ══════════════════════════════════════════════════════
+  // FASE 4 — APRESENTAÇÃO (28–30/jun)
+  // ══════════════════════════════════════════════════════
+
+  '2026-06-28': {
+    title: 'Slides — Estrutura + Conteúdo',
+    type:'trabalho', tag:'Trabalho', fase:'Fase 4 — Apresentação',
+    topics:[
+      'Estrutura dos slides (meta: 10–12 slides para 12–15 min):',
+      '  1. Capa · 2. Objetivo · 3. Contexto/Motivação · 4. Arquitetura da caixa',
+      '  5. Relações de transmissão (tabela por marcha) · 6. Engrenagens (tabela de resultados)',
+      '  7. Eixos (DCL + diâmetros) · 8. Mancais (tabela de seleção)',
+      '  9. Sistema de mudança · 10. CAD / Visualização · 11. Resultados gerais · 12. Conclusão',
+      'Regra de ouro da avaliação: 0.5 pt de penalidade por minuto fora de 12–15 min',
+      'Cada slide = 1 ideia. Fonte ≥ 28pt. Sem paredes de texto.',
+      'Inserir figuras do CAD — banca quer ver o projeto materializado',
+    ],
+    tip:'O professor avalia: organização (2.0) + objetividade (2.0) + domínio (2.0) + coerência (2.0) + tempo 12–15 min (2.0). Gerenciar o tempo é 20% da nota!',
+  },
+
+  '2026-06-29': {
+    title: 'Ensaio Cronometrado',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      '🎤 Ensaio completo cronometrado — meta exata: 13–14 minutos',
+      'Gravar em vídeo ou ensaiar com colega',
+      'Preparar respostas para perguntas típicas:',
+      '  → "Por que escolheu esse módulo e não um maior/menor?"',
+      '  → "Qual o fator de segurança da engrenagem mais crítica?"',
+      '  → "Como a carga axial das cônicas é absorvida pelo mancal?"',
+      '  → "Por que usou retas e não helicoidais nas marchas?"',
+      '  → "Como funciona o sistema de troca de velocidades?"',
+      'Ajuste fino dos slides baseado no ensaio',
+      'Preparar equipamento: notebook + pen drive backup + HDMI/VGA',
+    ],
+    tip:'O tempo é 20% da nota. Cronometre com precisão. Se passar de 15 min perde 0.5 por minuto — um minuto a mais já derruba meio ponto.',
+  },
+
+  '2026-06-30': {
+    title: '🎤 APRESENTAÇÃO FINAL',
+    type:'apresentacao', tag:'Apresentação',
+    topics:[
+      '📅 APRESENTAÇÃO FINAL (aula 29 do plano oficial)',
+      'Chegar cedo: testar projetor, conexão, abrir slides antes de começar',
+      'Abertura forte: contexto → objetivo → método → resultados → conclusão',
+      'Falar olhando para a banca — não ler os slides',
+      'Controlar o tempo: ter relógio visível. Pare em 14 min se necessário.',
+      'Nas perguntas: responda com segurança. Se não souber: "está fora do escopo, mas a literatura sugere…"',
+      'Após a apresentação: relatório final entregue até 08/07 (prazo máximo)',
+    ],
+    tip:'🎓 Você projetou uma caixa de transmissão completa para um Baja 4x4. Apresente com orgulho.',
+  },
+
+  // ══════════════════════════════════════════════════════
+  // PÓS-APRESENTAÇÃO — ENTREGA FINAL (01–08/jul)
+  // ══════════════════════════════════════════════════════
+
+  '2026-07-01': {
+    title: 'Ajustes Pós-Apresentação',
+    type:'trabalho', tag:'Trabalho', fase:'Fase 5 — Entrega Final',
+    topics:[
+      'Incorporar feedbacks recebidos na apresentação',
+      'Corrigir pontos levantados pela banca (se houver)',
+      'Revisão final da formatação ABNT: margens (3/2.5 cm), espaçamento 1.5, fonte Times/Arial 12',
+      'Verificar sumário automático e numeração de páginas',
+      'Gerar PDF final definitivo — nomear: Trabalho_EM2_[SeuNome]_2026.pdf',
+      'Backup em Google Drive + pen drive',
+    ],
+    tip:'Pequenas correções pós-banca fazem diferença. Mantenha foco por mais uma semana.',
+  },
+
+  '2026-07-02': {
+    title: 'Prova Final (se necessário)',
+    type:'deadline', tag:'Deadline',
+    topics:[
+      '📅 Aula 30 — PROVA FINAL da disciplina',
+      'Conteúdo: integral da disciplina (eixos, engrenagens, elementos flexíveis)',
+      'Revisar rapidamente os tópicos principais de cada módulo',
+      'Levar também o relatório se o professor solicitar entrega hoje',
+      'Verificar com o professor o canal oficial de entrega do trabalho',
+    ],
+    tip:'Confirme com antecedência se a entrega é hoje ou até 08/07.',
+  },
+
+  '2026-07-03': {
+    title: 'Revisão Final do Relatório',
+    type:'trabalho', tag:'Trabalho',
+    topics:[
+      'Leitura final do relatório completo — checar coerência geral',
+      'Confirmar que TODOS os itens obrigatórios do roteiro estão no texto:',
+      '  ✓ 3 velocidades + ré + cônicas 1:1',
+      '  ✓ Estrias + anéis sincronizadores + mecanismo de mudança',
+      '  ✓ Posicionamento axial + tipo de conexão nas extremidades',
+      '  ✓ Carcaça com 3 saídas e acoplamento do motor',
+      '  ✓ Apêndice com vista explodida e desenhos de todas as peças',
+      'Gerar versão final e confirmar envio',
+    ],
+    tip:'Checklist final do roteiro — não entregue sem passar item por item.',
+  },
+
+  '2026-07-07': {
+    title: '2ª Chamada & Entrega Máxima',
+    type:'deadline', tag:'Deadline',
+    topics:[
+      '📅 Aula 31 — 2ª Chamada de provas perdidas',
+      'Prazo máximo para entrega do relatório final: 08/07/2026',
+      'Confirmar canal de entrega com o professor (email, portal, impresso)',
+      'Se ainda não entregou: prioridade máxima hoje',
+      'Guardar comprovante de entrega',
+    ],
+    tip:'Último prazo possível. Entregue com qualquer qualidade do que não entregue.',
+  },
+};
+
+// ─── STORAGE ─────────────────────────────────────────────────────────────────
+const SK='cronograma_em2_v3';
+function loadDone(){try{return JSON.parse(localStorage.getItem(SK)||'{}');}catch(e){return {};}}
+function saveDone(o){try{localStorage.setItem(SK,JSON.stringify(o));}catch(e){}}
+let doneMap=loadDone();
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+const MPT=['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const DPT=['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'];
+const DFL=['domingo','segunda-feira','terça-feira','quarta-feira','quinta-feira','sexta-feira','sábado'];
+function pad2(n){return n<10?'0'+n:''+n;}
+function dk(y,m,d){return`${y}-${pad2(m)}-${pad2(d)}`;}
+function parseKey(k){const[y,m,d]=k.split('-').map(Number);return new Date(y,m-1,d);}
+function todayKey(){const t=new Date();return dk(t.getFullYear(),t.getMonth()+1,t.getDate());}
+
+function updateCountdowns(){
+  const today=new Date();today.setHours(0,0,0,0);
+  function diff(target){
+    const t=new Date(target+'T00:00:00');
+    const d=Math.round((t-today)/(1000*60*60*24));
+    if(d<0)return'Passou';if(d===0)return'Hoje!';
+    return d+' dia'+(d>1?'s':'');
+  }
+  document.getElementById('cd-prova').textContent=diff('2026-06-09');
+  document.getElementById('cd-apres').textContent=diff('2026-06-30');
+  document.getElementById('cd-entrega').textContent=diff('2026-07-08');
+}
+
+function updateProgress(){
+  const all=Object.keys(DAYS_DATA);
+  const done=all.filter(k=>doneMap[k]).length;
+  const pct=all.length?Math.round(done/all.length*100):0;
+  document.getElementById('progress-fill').style.width=pct+'%';
+  document.getElementById('progress-pct-text').textContent=pct;
+}
+
+function renderCalendars(){
+  const container=document.getElementById('cal-container');
+  container.innerHTML='';
+  let currentFase='';
+  [[2026,6],[2026,7]].forEach(([year,month])=>{
+    const block=document.createElement('div');block.className='month-block';
+    const title=document.createElement('div');title.className='month-title';
+    title.textContent=MPT[month-1]+' '+year;block.appendChild(title);
+    const wh=document.createElement('div');wh.className='week-header';
+    DPT.forEach(d=>{const h=document.createElement('div');h.textContent=d;wh.appendChild(h);});
+    block.appendChild(wh);
+    const grid=document.createElement('div');grid.className='cal-grid';
+    const firstDay=new Date(year,month-1,1).getDay();
+    const dim=new Date(year,month,0).getDate();
+    for(let i=0;i<firstDay;i++){const e=document.createElement('div');e.className='day-cell empty';grid.appendChild(e);}
+    const today=todayKey();
+    for(let d=1;d<=dim;d++){
+      const key=dk(year,month,d);
+      const data=DAYS_DATA[key];
+      const isBlocked=BLOCKED.has(key);
+      const isDone=!!doneMap[key];
+      const isToday=key===today;
+      const isAula=AULA_DAYS.has(key);
+      const cell=document.createElement('div');cell.className='day-cell';
+      if(isBlocked){
+        cell.classList.add('blocked');
+      } else if(data){
+        cell.classList.add('has-task','type-'+data.type);
+        if(isDone)cell.classList.add('done');
+        cell.addEventListener('click',()=>openModal(key));
+      }
+      if(isToday)cell.classList.add('today');
+      const numRow=document.createElement('div');numRow.className='day-num';numRow.textContent=d;
+      if(isAula&&!isBlocked){const dot=document.createElement('div');dot.className='aula-dot';dot.title='Dia de aula';numRow.appendChild(dot);}
+      cell.appendChild(numRow);
+      if(isBlocked){
+        const bt=document.createElement('div');bt.className='day-title';bt.style.cssText='color:var(--blocked);font-size:10px;';bt.textContent='Bloqueado';cell.appendChild(bt);
+        const tag=document.createElement('div');tag.className='day-tag tag-bloqueado';tag.textContent='OFF';cell.appendChild(tag);
+      } else if(data){
+        const titleEl=document.createElement('div');titleEl.className='day-title';
+        titleEl.textContent=data.title.replace(/^[🔴🟢📅⚙📐🎤]+\s*/,'');cell.appendChild(titleEl);
+        if(isDone){const chk=document.createElement('div');chk.className='done-check';chk.textContent='✓';cell.appendChild(chk);}
+        else{
+          const tm={'Prova':'tag-prova','Trabalho':'tag-trabalho','Ambos':'tag-ambos','Deadline':'tag-deadline','Apresentação':'tag-apresentacao','Simulado':'tag-simulado'};
+          const tag=document.createElement('div');tag.className='day-tag '+(tm[data.tag]||'tag-trabalho');tag.textContent=data.tag;cell.appendChild(tag);
+        }
+      }
+      grid.appendChild(cell);
+    }
+    block.appendChild(grid);container.appendChild(block);
+  });
+}
+
+let currentModalKey=null;
+function openModal(key){
+  const data=DAYS_DATA[key];if(!data)return;
+  currentModalKey=key;
+  const dt=parseKey(key);
+  const df=DFL[dt.getDay()];
+  document.getElementById('modal-date').textContent=df.charAt(0).toUpperCase()+df.slice(1)+', '+dt.getDate()+' de '+MPT[dt.getMonth()]+' de '+dt.getFullYear();
+  document.getElementById('modal-title').textContent=data.title;
+  const ba=document.getElementById('modal-badges');ba.innerHTML='';
+  const tm2={'Prova':'badge-prova','Trabalho':'badge-trabalho','Ambos':'badge-ambos','Deadline':'badge-deadline','Apresentação':'badge-apresentacao','Simulado':'badge-simulado'};
+  const b1=document.createElement('span');b1.className='badge '+(tm2[data.tag]||'badge-trabalho');b1.textContent=data.tag;ba.appendChild(b1);
+  if(data.fase){const bf=document.createElement('span');bf.className='badge';bf.style.cssText='background:var(--sepia);color:white;';bf.textContent=data.fase;ba.appendChild(bf);}
+  if(AULA_DAYS.has(key)){const b2=document.createElement('span');b2.className='badge badge-aula';b2.textContent='📚 Dia de Aula';ba.appendChild(b2);}
+  const tl=document.getElementById('modal-topics');tl.innerHTML='';
+  (data.topics||[]).forEach(t=>{const li=document.createElement('li');li.textContent=t;tl.appendChild(li);});
+  const tw=document.getElementById('modal-tip-wrap');
+  tw.innerHTML=data.tip?`<div class="modal-tip"><strong>💡 Dica estratégica</strong>${data.tip}</div>`:'';
+  const btn=document.getElementById('modal-done-btn');
+  if(doneMap[key]){btn.textContent='✓ Concluído — clique para desfazer';btn.className='modal-done-btn is-done';}
+  else{btn.textContent='✓ Marcar como concluído';btn.className='modal-done-btn not-done';}
+  document.getElementById('modal-overlay').classList.add('open');
+  document.body.style.overflow='hidden';
+}
+function closeModal(){document.getElementById('modal-overlay').classList.remove('open');document.body.style.overflow='';currentModalKey=null;}
+document.getElementById('modal-close').addEventListener('click',closeModal);
+document.getElementById('modal-overlay').addEventListener('click',e=>{if(e.target===document.getElementById('modal-overlay'))closeModal();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal();});
+document.getElementById('modal-done-btn').addEventListener('click',()=>{
+  if(!currentModalKey)return;
+  doneMap[currentModalKey]=!doneMap[currentModalKey];
+  if(!doneMap[currentModalKey])delete doneMap[currentModalKey];
+  saveDone(doneMap);updateProgress();renderCalendars();
+  const k=currentModalKey;currentModalKey=null;openModal(k);
+});
+
+updateCountdowns();updateProgress();renderCalendars();
+</script>
+</body>
+</html>
